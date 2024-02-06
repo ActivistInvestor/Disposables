@@ -36,7 +36,7 @@ namespace MyNamespace
       /// <summary>
       /// This method can be passed any number of IDisposables.
       /// When the Clear() method is called, the elements will
-      /// be disposed.
+      /// be disposed and dequeued.
       /// 
       /// e.g.:
       /// 
@@ -46,13 +46,16 @@ namespace MyNamespace
       /// Note that in lieu of calling Add(), the AutoDispose() extension
       /// method can be used thusly:
       ///
+      ///    Circle circle = new Circle(Point3d.Origin, Vector3d.ZAxis, 1.0);
+      ///    circle.AutoDispose();
+      ///    
+      /// or with this one-liner:
+      /// 
       ///    Circle circle = new Circle(Point3d.Origin, Vector3d.ZAxis, 1.0).AutoDispose();
       ///    
       /// </summary>
-      /// <param name="disposable">The item to be disposed at shutdown
+      /// <param name="disposable">The items to be disposed at shutdown
       /// or when the Clear() method is called</param>
-      /// <param name="add">troe to add the item, false to remove it</param>
-      /// 
 
       public static void Add(params IDisposable[] args)
       {
@@ -64,8 +67,7 @@ namespace MyNamespace
             {
                if(disposable == null)
                   throw new ArgumentException("null element");
-               if(!list.Contains(disposable))
-                  list.Add(disposable);
+               list.Add(disposable);
             }
          }
       }
