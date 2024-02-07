@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices.ComTypes;
+﻿using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace System.Collections.Generic
 {
@@ -172,6 +173,23 @@ namespace System.Collections.Generic
          get { return list[index]; }
       }
 
+      public bool ExceptWhere(Func<T, bool> predicate)
+      {
+         if(predicate == null)
+            throw new ArgumentNullException(nameof(predicate));
+         int count = this.Count;
+         if(count > 0)
+         {
+            set.ExceptWith(list.Where(predicate));
+            if(count > this.Count)
+            {
+               list = list.Where(p => set.Contains(p)).ToList();
+               return true;
+            }
+         }
+         return false;
+      }
+
       public int Count => set.Count;
 
       public bool IsReadOnly => false;
@@ -213,8 +231,8 @@ namespace System.Collections.Generic
       /// <summary>
       /// Because a user-specified IEqualityComparer<T> is
       /// supported, we cannot rely on comparisons done by
-      /// the List<T>, which uses the default comparer for
-      /// the element type.
+      /// List<T>, which always uses the default equality
+      /// comparer for the element type.
       /// </summary>
 
       public int IndexOf(T item)

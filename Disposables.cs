@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
@@ -133,7 +134,7 @@ namespace MyNamespace
       /// using the Add() method or the AutoDispose() method.
       /// </summary>
 
-      public static void Clear()
+      public static void Dispose()
       {
          Clear(false);
       }
@@ -179,18 +180,16 @@ namespace MyNamespace
       /// This method is typically used only in specialized
       /// use cases. It will remove any elements derived from
       /// DisposableWrapper whose IsDisposed property is true.
-      /// If a DisposableWrap9per's IdDisposed property is true,
+      /// If a DisposableWrapper's IdDisposed property is true,
       /// the instance has been disposed, making a call to its
       /// Dispose() method unecessary.
       /// </summary>
 
-      public static void SweepDisposableWrappers()
+      public static void PurgeDisposableWrappers()
       {
-         var disposed = list.OfType<DisposableWrapper>().Where(dw => dw.IsDisposed).ToList();
          lock(lockObj)
          {
-            foreach(DisposableWrapper wrapper in disposed)
-               list.Remove(wrapper);
+            list.ExceptWhere(d => d is DisposableWrapper dw && dw.IsDisposed);
          }
       }
 
@@ -226,6 +225,7 @@ namespace MyNamespace
       /// </summary>
       /// <param name="item">The IDisposable to query for</param>
       /// <returns>true if the argument is queued for disposal</returns>
+
       public static bool IsAutoDispose(this IDisposable item)
       {
          return Disposables.Contains(item);
