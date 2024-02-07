@@ -79,6 +79,10 @@ namespace MyNamespace
       /// 
       ///    circle.AutoDispose(false);
       /// 
+      /// If either the Remove() or AutoDispose(false) methods are used
+      /// to dequeue an IDisposable, the caller becaumes responsible for
+      /// disposing the IDisposable.
+      /// 
       /// </summary>
       /// <param name="disposable">The items to be disposed at shutdown
       /// or when the Clear() method is called</param>
