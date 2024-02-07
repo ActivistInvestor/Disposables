@@ -14,7 +14,15 @@ namespace MyNamespace
    /// 
    /// Contract: IDisposable instances managed by this
    /// class are disposed in the reverse order in which 
-   /// they are added.
+   /// they are added. Care must be taken in cases where
+   /// there is an inter-dependence between objects added 
+   /// to the disposal queue. Dependent objects should be
+   /// added AFTER the objects they're dependent on have 
+   /// been added.
+   /// 
+   /// Following that rule will serve to ensure that when 
+   /// a dependent object is disposed, the object(s) that
+   /// it depends on have not been disposed yet.
    /// 
    /// </summary>
 
@@ -34,8 +42,10 @@ namespace MyNamespace
       }
 
       /// <summary>
+      /// Disposables.Add(IDisposable item,...)
+      /// 
       /// This method can be passed any number of IDisposables.
-      /// When the Clear() method is called, the elements will
+      /// When the Clear() method is called, the arguments will
       /// be disposed and dequeued.
       /// 
       /// e.g.:
@@ -43,8 +53,8 @@ namespace MyNamespace
       ///    Circle circle = new Circle(Point3d.Origin, Vector3d.ZAxis, 1.0);
       ///    Disposables.Add(circle);
       ///    
-      /// Note that in lieu of calling Add(), the AutoDispose() extension
-      /// method can be used thusly:
+      /// Note that in lieu of calling Add(), the AutoDispose() 
+      /// extension method can instead be used thusly:
       ///
       ///    Circle circle = new Circle(Point3d.Origin, Vector3d.ZAxis, 1.0);
       ///    circle.AutoDispose();
@@ -53,6 +63,19 @@ namespace MyNamespace
       /// 
       ///    Circle circle = new Circle(Point3d.Origin, Vector3d.ZAxis, 1.0).AutoDispose();
       ///    
+      /// If for some reason, you no longer want an object
+      /// that was previously-queued for disposal to not
+      /// be disposed, you can remove it from the queue via
+      /// either the Remove() method, or the AutoDispose()
+      /// method, like so:
+      /// 
+      ///    Disposables.Remove(circle);
+      ///    
+      /// or using the AutoDispose() extension method, by
+      /// passing false as the argument:
+      /// 
+      ///    circle.AutoDispose(false);
+      /// 
       /// </summary>
       /// <param name="disposable">The items to be disposed at shutdown
       /// or when the Clear() method is called</param>
@@ -86,10 +109,11 @@ namespace MyNamespace
       }
 
       /// <summary>
-      /// Checks if a given IDisposable is already queued for disposing:
+      /// Checks if a given IDisposable is already queued 
+      /// for disposal:
       /// </summary>
 
-      public static bool Contains(IDisposable disposable) => list.Contains(disposable);
+      public static bool Contains(IDisposable item) => list.Contains(item);
 
       /// <summary>
       /// The count of elements currently queued for disposal:
@@ -104,7 +128,7 @@ namespace MyNamespace
       /// 
       /// This method can also be called at any time to dispose and 
       /// dequeue IDisposable instances that were previously-queued
-      /// using the Add() method.
+      /// using the Add() method or the AutoDispose() method.
       /// </summary>
 
       public static void Clear()
@@ -172,6 +196,18 @@ namespace MyNamespace
          else
             Remove(item);
          return item;
+      }
+
+      /// <summary>
+      /// An extension method that can be used in lieu of the
+      /// Disposables.Contains() method to indicate if a given
+      /// IDisposable has been queued for disposal.
+      /// </summary>
+      /// <param name="item">The IDisposable to query for</param>
+      /// <returns>true if the argument is queued for disposal</returns>
+      public static bool IsAutoDispose(this IDisposable item)
+      {
+         return Disposables.Contains(item);
       }
    }
 }
