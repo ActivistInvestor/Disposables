@@ -13,8 +13,6 @@ namespace System.Collections.Generic
    /// store each element in duplicate, meaning that will use
    /// more than double the memory as a simple List<T>.
    /// 
-   /// TODO: Fix issue with equality comparer discrepancy as
-   /// was done in OrderedSet<T> below.
    /// </summary>
    /// <typeparam name="T">The element type</typeparam>
 
@@ -28,7 +26,7 @@ namespace System.Collections.Generic
       {
          set = new HashSet<T>(comparer);
          list = new List<T>();
-         this.comparer = comparer ?? set.Comparer;
+         this.comparer = set.Comparer;
       }
 
       public HashList(IEnumerable<T> items, IEqualityComparer<T> comparer)
@@ -166,7 +164,7 @@ namespace System.Collections.Generic
       {
          set = new HashSet<T>(comparer);
          list = new List<T>();
-         this.comparer = comparer;
+         this.comparer = set.Comparer;
       }
 
       public T this[int index]
@@ -221,8 +219,6 @@ namespace System.Collections.Generic
 
       public int IndexOf(T item)
       {
-         if(comparer == null)
-            return list.IndexOf(item);
          int cnt = list.Count;
          for(int i = 0; i < cnt; i++)
          {
