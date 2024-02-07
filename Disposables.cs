@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
 
@@ -174,6 +176,25 @@ namespace MyNamespace
       }
 
       /// <summary>
+      /// This method is typically used only in specialized
+      /// use cases. It will remove any elements derived from
+      /// DisposableWrapper whose IsDisposed property is true.
+      /// If a DisposableWrap9per's IdDisposed property is true,
+      /// the instance has been disposed, making a call to its
+      /// Dispose() method unecessary.
+      /// </summary>
+
+      public static void SweepDisposableWrappers()
+      {
+         var disposed = list.OfType<DisposableWrapper>().Where(dw => dw.IsDisposed).ToList();
+         lock(lockObj)
+         {
+            foreach(DisposableWrapper wrapper in disposed)
+               list.Remove(wrapper);
+         }
+      }
+
+      /// <summary>
       /// An extension method targeting IDisposable, that can be used
       /// in lieu of the Add() method. If the add argument is true, the
       /// target is queued for disposal. If the add argument is false
@@ -183,7 +204,7 @@ namespace MyNamespace
       /// <param name="item">The item to be queued/dequeued for 
       /// automatic disposal</param>
       /// <param name="add">true to queue the item for disposal,
-      /// or false to dequeue the item</param>
+      /// or false to dequeue the item (default = true)</param>
       /// <exception cref="ArgumentNullException"></exception>
 
       public static T AutoDispose<T>(this T item, bool add = true)
