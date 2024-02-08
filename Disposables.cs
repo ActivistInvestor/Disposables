@@ -33,6 +33,7 @@ namespace MyNamespace
    {
       static object lockObj = new object();
       static OrderedSet<IDisposable> list = new OrderedSet<IDisposable>();
+      static Disposer disposer = null;
 
       static Disposables()
       {
@@ -115,7 +116,13 @@ namespace MyNamespace
       /// for disposal:
       /// </summary>
 
-      public static bool Contains(IDisposable item) => list.Contains(item);
+      public static bool Contains(IDisposable item)
+      {
+         lock(lockObj)
+         {
+            return list.Contains(item);
+         }
+      }
 
       /// <summary>
       /// The count of elements currently queued for disposal:
@@ -154,7 +161,6 @@ namespace MyNamespace
                      if(IsDisposed(item))
                         continue;
                      item.Dispose();
-                     // GC.SuppressFinalize(item);
                   }
                }
                catch(System.Exception ex) 
@@ -247,6 +253,44 @@ namespace MyNamespace
       public static bool IsAutoDispose(this IDisposable item)
       {
          return Disposables.Contains(item);
+      }
+
+      /// <summary>
+      /// Returns an object that can be controlled by a
+      /// using() directory, that will call the Dispose()
+      /// method of this class when the instance is
+      /// disposed.
+      /// 
+      /// Example:
+      /// <code>
+      ///           using(Disposables.GetDisposer())
+      ///           {
+      ///              Disposables.Add(disposable1);
+      ///              Disposables.Add(disposable2);
+      ///              Disposables.Add(disposable3);....
+      ///              
+      /// 
+      ///           }  // All objects added to the Disposable 
+      ///              // are disposed here, without having
+      ///              // to call Disposables.Dispose().
+      /// </code>
+      /// </summary>
+      /// <returns></returns>
+
+      public static IDisposable GetDisposer()
+      {
+         if(disposer == null)
+            disposer = new Disposer();
+         return disposer;
+      }
+
+      class Disposer : IDisposable
+      {
+         public void Dispose()
+         {
+            Disposables.Dispose();
+            Disposables.disposer = null;
+         }
       }
    }
 }
