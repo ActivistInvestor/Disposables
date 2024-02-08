@@ -48,7 +48,7 @@ namespace MyNamespace
       /// Disposables.Add(IDisposable item,...)
       /// 
       /// This method can be passed any number of IDisposables.
-      /// When the Clear() method is called, the arguments will
+      /// When the Dispose() method is called, the arguments will
       /// be disposed and dequeued.
       /// 
       /// e.g.:
@@ -85,7 +85,7 @@ namespace MyNamespace
       /// 
       /// </summary>
       /// <param name="disposable">The items to be disposed at shutdown
-      /// or when the Clear() method is called</param>
+      /// or when the Dispose() method is called</param>
 
       public static void Add(params IDisposable[] args)
       {
@@ -93,12 +93,7 @@ namespace MyNamespace
             throw new ArgumentNullException(nameof(args));
          lock(lockObj)
          {
-            foreach(IDisposable disposable in args)
-            {
-               if(disposable == null)
-                  throw new ArgumentException("null element");
-               list.Add(disposable);
-            }
+            list.UnionWith(args, false);
          }
       }
 
@@ -146,6 +141,7 @@ namespace MyNamespace
       static void Clear(bool terminating = false)
       {
          System.Exception exception = null;
+         int exceptionCount = 0;
          lock(lockObj)
          {
             for(int i = list.Count - 1; i > -1; i--)
@@ -155,15 +151,16 @@ namespace MyNamespace
                   IDisposable item = list[i];
                   if(item != null)
                   {
-                     DisposableWrapper wrapper = item as DisposableWrapper;
-                     if(wrapper != null && wrapper.IsDisposed)
+                     if(IsDisposed(item))
                         continue;
                      item.Dispose();
+                     // GC.SuppressFinalize(item);
                   }
                }
-               catch(System.Exception ex)
+               catch(System.Exception ex) 
                {
                   exception = exception ?? ex;
+                  exceptionCount++;
                }
             }
             list.Clear();
@@ -174,7 +171,7 @@ namespace MyNamespace
                throw exception;
             else
             {
-               Debug.WriteLine($"Dispose() threw {exception}");
+               Debug.WriteLine($"Dispose() threw {exception} (total: {exceptionCount})");
                Console.Beep();
             }
          }
@@ -186,15 +183,32 @@ namespace MyNamespace
       /// DisposableWrapper whose IsDisposed property is true.
       /// If a DisposableWrapper's IdDisposed property is true,
       /// the instance has been disposed, making a call to its
-      /// Dispose() method unecessary.
+      /// Dispose() method unecessary. Calling this method will
+      /// also make any otherwise-unreachable elements elegible
+      /// for garbage collection.
       /// </summary>
 
       public static void PurgeDisposableWrappers()
       {
-         lock(lockObj)
-         {
-            list.ExceptWhere(d => d is DisposableWrapper dw && dw.IsDisposed);
+         var remove = new List<IDisposable>(list.Count);
+         for(int i = 0; i < list.Count; i++)
+         { 
+            IDisposable disposable = list[i];
+            if(IsDisposed(disposable))
+               remove.Add(disposable);
          }
+         if(remove.Count > 0)
+         {
+            lock(lockObj)
+            {
+               list.ExceptWith(remove);
+            }
+         }
+      }
+
+      static bool IsDisposed(IDisposable disposable)
+      {
+         return disposable is DisposableWrapper dw && dw.IsDisposed;
       }
 
       /// <summary>

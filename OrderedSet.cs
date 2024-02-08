@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime;
 using System.Runtime.InteropServices.ComTypes;
 
 namespace System.Collections.Generic
@@ -177,17 +178,44 @@ namespace System.Collections.Generic
       {
          if(predicate == null)
             throw new ArgumentNullException(nameof(predicate));
-         int count = this.Count;
-         if(count > 0)
+         return ExceptWith(list.Where(predicate));
+      }
+
+      public bool ExceptWith(IEnumerable<T> enumerable)
+      {
+         if(enumerable == null)
+            throw new ArgumentNullException(nameof(enumerable));
+         if(this.Count > 0)
          {
-            set.ExceptWith(list.Where(predicate));
-            if(count > this.Count)
+            int count = list.Count;
+            set.ExceptWith(enumerable);
+            if(set.Count < list.Count)
             {
-               list = list.Where(p => set.Contains(p)).ToList();
+               PurgeList();
                return true;
             }
          }
          return false;
+      }
+
+      public bool UnionWith(IEnumerable<T> enumerable, bool acceptNull = true)
+      {
+         if(enumerable == null)
+            throw new ArgumentNullException(nameof(enumerable));
+         int count = this.Count;
+         foreach(T item in enumerable)
+         {
+            if(!acceptNull && item == null)
+               throw new ArgumentException("null element");
+            if(set.Add(item))
+               list.Add(item);
+         }
+         return this.Count > count;
+      }
+
+      void PurgeList()
+      {
+         list = list.Where(item => set.Contains(item)).ToList();
       }
 
       public int Count => set.Count;
@@ -232,13 +260,14 @@ namespace System.Collections.Generic
       /// Because a user-specified IEqualityComparer<T> is
       /// supported, we cannot rely on comparisons done by
       /// List<T>, which always uses the default equality
-      /// comparer for the element type.
+      /// comparer for the element type. In this case, the
+      /// same equality comparer used by the HashSet must
+      /// be used by the List.
       /// </summary>
 
       public int IndexOf(T item)
       {
-         int cnt = list.Count;
-         for(int i = 0; i < cnt; i++)
+         for(int i = 0; i < list.Count; i++)
          {
             if(comparer.Equals(list[i], item))
                return i;
