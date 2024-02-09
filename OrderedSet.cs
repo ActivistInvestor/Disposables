@@ -223,10 +223,8 @@ namespace System.Collections.Generic
 
       public void Add(T item)
       {
-         bool result = set.Add(item);
-         if(result)
+         if(set.Add(item))
             list.Add(item);
-         return result;
       }
 
       public void Clear()
