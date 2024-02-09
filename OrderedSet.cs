@@ -207,8 +207,7 @@ namespace System.Collections.Generic
          {
             if(!acceptNull && item == null)
                throw new ArgumentException("null element");
-            if(set.Add(item))
-               list.Add(item);
+            this.Add(item);
          }
          return this.Count > count;
       }
@@ -224,8 +223,10 @@ namespace System.Collections.Generic
 
       public void Add(T item)
       {
-         if(set.Add(item))
+         bool result = set.Add(item);
+         if(result)
             list.Add(item);
+         return result;
       }
 
       public void Clear()
